@@ -13,6 +13,11 @@ type Repository struct {
 	data map[model.RecordType]map[model.RecordID][]model.Rating
 }
 
+// Put implements rating.ratingRepository.
+func (*Repository) Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
+	panic("unimplemented")
+}
+
 // New creates a new memory repository.
 func New() *Repository {
 	return &Repository{map[model.RecordType]map[model.RecordID][]model.Rating{}}
