@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jay-SP/movieapplication/metadata/internal/repository"
+	"github.com/jay-SP/movieapplication/rating/internal/repository"
 	"github.com/jay-SP/movieapplication/rating/pkg/model"
 )
 
@@ -44,6 +44,7 @@ func (c *Controller) GetAggregatedRating(ctx context.Context, recordID model.Rec
 	return sum / float64(len(ratings)), nil
 }
 
+// PutRating writes a rating for a given record.
 func (c *Controller) PutRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
 	return c.repo.Put(ctx, recordID, recordType, rating)
 }
