@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jay-SP/movieapplication/metadata/internal/repository"
+	"github.com/jay-SP/movieapplication/rating/internal/repository"
 	"github.com/jay-SP/movieapplication/rating/pkg/model"
 )
 
