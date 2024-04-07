@@ -31,7 +31,7 @@ func NewRegistry() *Registry {
 }
 
 // Register creates a service record in the registry.
-func (r *Registry) Register(ctx context.Context, instanceID instanceID, serviceName serviceName, hostPort string) {
+func (r *Registry) Register(ctx context.Context, instanceId instanceID, serviceName serviceName, hostPort string) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -39,14 +39,14 @@ func (r *Registry) Register(ctx context.Context, instanceID instanceID, serviceN
 		r.serviceAddrs[serviceName] = make(map[instanceID]*serviceInstance)
 	}
 
-	r.serviceAddrs[serviceName][instanceID] = &serviceInstance{
+	r.serviceAddrs[serviceName][instanceId] = &serviceInstance{
 		hostPort:   hostPort,
 		lastActive: time.Now(),
 	}
 }
 
 // Deregister removes a service record from the registry.
-func (r *Registry) Deregister(ctx context.Context, instanceID instanceID, serviceName serviceName) error {
+func (r *Registry) Deregister(ctx context.Context, instanceId instanceID, serviceName serviceName) error {
 	r.Lock()
 	defer r.Unlock()
 
@@ -54,7 +54,7 @@ func (r *Registry) Deregister(ctx context.Context, instanceID instanceID, servic
 		return nil // Service not found, no error
 	}
 
-	delete(r.serviceAddrs[serviceName], instanceID)
+	delete(r.serviceAddrs[serviceName], instanceId)
 	return nil
 }
 
