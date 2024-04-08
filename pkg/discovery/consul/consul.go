@@ -35,7 +35,7 @@ func (r *Registry) Register(ctx context.Context, instanceID string, serviceName 
 	if len(parts) != 2 {
 		return errors.New("hostPort must be in the form of <host>:<port>, example: localhost:8081")
 	}
-	port, err := strconv.Atoi(parts[2])
+	port, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return err
 	}
