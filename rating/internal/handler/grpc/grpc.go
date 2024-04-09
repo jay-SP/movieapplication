@@ -24,7 +24,7 @@ func New(ctrl *rating.Controller) *Handler {
 
 // GetAggregatedRating returns the aggregated rating for a record.
 func (h *Handler) GetAggregatedRating(ctx context.Context, req *gen.GetAggregatedRatingRequest) (*gen.GetAggregatedRatingResponse, error) {
-	if req == nil || req.RecordId == "" || req.RecordType == 0 { //
+	if req == nil || req.RecordId == "" || req.RecordType == "" { //
 		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
 	}
 	v, err := h.ctrl.GetAggregatedRating(ctx, model.RecordID(req.RecordId), model.RecordType(req.RecordType))
