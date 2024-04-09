@@ -49,7 +49,7 @@ func main() {
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v, err")
+		log.Fatalf("failed to listen: %v", err)
 	}
 	srv := grpc.NewServer()
 	reflection.Register(srv)
