@@ -22,7 +22,7 @@ type RatingValue int
 // Rating defines an individual rating creaetd by a user for some record.
 type Rating struct {
 	RecordID   string      `json:"recordId" `
-	RecordType string      `json:"recordType"`
+	RecordType int32       `json:"recordType"`
 	UserID     UserID      `json:"userId"`
 	Value      RatingValue `json:"value"`
 }
