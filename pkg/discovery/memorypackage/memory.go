@@ -9,13 +9,11 @@ import (
 	"github.com/jay-SP/movieapplication/pkg/discovery"
 )
 
-type serviceName string
-type instanceID string
-
-// Registry defines an in-memory service registry.
+// Registry defines an in-memory service regisry.
+// Note: this registry does not perform health monitoring of active instances.
 type Registry struct {
 	sync.RWMutex
-	serviceAddrs map[serviceName]map[instanceID]*serviceInstance
+	serviceAddrs map[string]map[string]*serviceInstance
 }
 
 type serviceInstance struct {
@@ -25,70 +23,55 @@ type serviceInstance struct {
 
 // NewRegistry creates a new in-memory service registry instance.
 func NewRegistry() *Registry {
-	return &Registry{
-		serviceAddrs: make(map[serviceName]map[instanceID]*serviceInstance),
-	}
+	return &Registry{serviceAddrs: map[string]map[string]*serviceInstance{}}
 }
 
 // Register creates a service record in the registry.
-func (r *Registry) Register(ctx context.Context, instanceId instanceID, serviceName serviceName, hostPort string) {
+func (r *Registry) Register(ctx context.Context, instanceID string, serviceName string, hostPort string) error {
 	r.Lock()
 	defer r.Unlock()
-
 	if _, ok := r.serviceAddrs[serviceName]; !ok {
-		r.serviceAddrs[serviceName] = make(map[instanceID]*serviceInstance)
+		r.serviceAddrs[serviceName] = map[string]*serviceInstance{}
 	}
-
-	r.serviceAddrs[serviceName][instanceId] = &serviceInstance{
-		hostPort:   hostPort,
-		lastActive: time.Now(),
-	}
-}
-
-// Deregister removes a service record from the registry.
-func (r *Registry) Deregister(ctx context.Context, instanceId instanceID, serviceName serviceName) error {
-	r.Lock()
-	defer r.Unlock()
-
-	if _, ok := r.serviceAddrs[serviceName]; !ok {
-		return nil // Service not found, no error
-	}
-
-	delete(r.serviceAddrs[serviceName], instanceId)
+	r.serviceAddrs[serviceName][instanceID] = &serviceInstance{hostPort: hostPort, lastActive: time.Now()}
 	return nil
 }
 
-// ReportHealthyState is a mechanism for reporting healthy state to the registry.
-func (r *Registry) ReportHealthyState(instanceID instanceID, serviceName serviceName) error {
+// Deregister removes a service record from the registry.
+func (r *Registry) Deregister(ctx context.Context, instanceID string, serviceName string) error {
 	r.Lock()
 	defer r.Unlock()
+	if _, ok := r.serviceAddrs[serviceName]; !ok {
+		return nil
+	}
+	delete(r.serviceAddrs[serviceName], instanceID)
+	return nil
+}
 
+// ReportHealthyState is a push mechanism for reporting healthy state to the registry.
+func (r *Registry) ReportHealthyState(instanceID string, serviceName string) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, ok := r.serviceAddrs[serviceName]; !ok {
 		return errors.New("service is not registered yet")
 	}
-
 	if _, ok := r.serviceAddrs[serviceName][instanceID]; !ok {
 		return errors.New("service instance is not registered yet")
 	}
-
 	r.serviceAddrs[serviceName][instanceID].lastActive = time.Now()
 	return nil
 }
 
 // ServiceAddresses returns the list of addresses of active instances of the given service.
-func (r *Registry) ServiceAddresses(ctx context.Context, serviceName serviceName) ([]string, error) {
+func (r *Registry) ServiceAddresses(ctx context.Context, serviceName string) ([]string, error) {
 	r.RLock()
 	defer r.RUnlock()
-
-	if _, ok := r.serviceAddrs[serviceName]; !ok || len(r.serviceAddrs[serviceName]) == 0 {
+	if len(r.serviceAddrs[serviceName]) == 0 {
 		return nil, discovery.ErrNotFound
 	}
-
 	var res []string
-	now := time.Now()
-
 	for _, i := range r.serviceAddrs[serviceName] {
-		if i.lastActive.Before(now.Add(-5 * time.Second)) {
+		if i.lastActive.Before(time.Now().Add(-5 * time.Second)) {
 			continue
 		}
 		res = append(res, i.hostPort)

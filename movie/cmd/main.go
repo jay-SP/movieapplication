@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
-	"time"
+	"os"
 
 	"github.com/jay-SP/movieapplication/gen"
 	"github.com/jay-SP/movieapplication/movie/internal/controller/movie"
@@ -14,40 +13,36 @@ import (
 	ratinggateway "github.com/jay-SP/movieapplication/movie/internal/gateway/rating/http"
 	grpchandler "github.com/jay-SP/movieapplication/movie/internal/handler/grpc"
 	"github.com/jay-SP/movieapplication/pkg/discovery"
-	"github.com/jay-SP/movieapplication/pkg/discovery/consul"
+	memory "github.com/jay-SP/movieapplication/pkg/discovery/memorypackage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"gopkg.in/yaml.v3"
 )
 
 const serviceName = "movieservice"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8083, "API handler port")
-	flag.Parse()
-	log.Printf("Starting the movie service on port %d", port)
-	registry, err := consul.NewRegistry("localhost:8500")
+	f, err := os.Open("/Users/jp/go/src/github.com/jay-SP/movieapplication/movie/configs/base.yaml")
 	if err != nil {
 		panic(err)
 	}
+	var cfg Config
+	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
+		panic(err)
+	}
+	port := cfg.API.Port
+	log.Printf("Starting the movie service on port %d", port)
+	registry := memory.NewRegistry()
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
 		panic(err)
 	}
-	go func() {
-		for {
-			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
-				log.Println("Failed to report healthy state: " + err.Error())
-			}
-			time.Sleep(1 * time.Second)
-		}
-	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 	metadataGateway := metadatagateway.New(registry)
 	ratingGateway := ratinggateway.New(registry)
-	svc := movie.New(ratingGateway, metadataGateway)
-	h := grpchandler.New(svc)
+	ctrl := movie.New(ratingGateway, metadataGateway)
+	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

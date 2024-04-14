@@ -13,11 +13,12 @@ import (
 
 //Registery defines a Consul-based service registry.
 
+// Registry defines a Consul-based service regisry.
 type Registry struct {
 	client *consul.Client
 }
 
-// NewRegistry creates anew consul-based service registery instance.
+// NewRegistry creates a new Consul-based service registry instance.
 func NewRegistry(addr string) (*Registry, error) {
 	config := consul.DefaultConfig()
 	config.Address = addr
@@ -28,12 +29,11 @@ func NewRegistry(addr string) (*Registry, error) {
 	return &Registry{client: client}, nil
 }
 
-//Register creates a service record in the registry.
-
+// Register creates a service record in the registry.
 func (r *Registry) Register(ctx context.Context, instanceID string, serviceName string, hostPort string) error {
 	parts := strings.Split(hostPort, ":")
 	if len(parts) != 2 {
-		return errors.New("hostPort must be in the form of <host>:<port>, example: localhost:8081")
+		return errors.New("hostPort must be in a form of <host>:<port>, example: localhost:8081")
 	}
 	port, err := strconv.Atoi(parts[1])
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *Registry) Deregister(ctx context.Context, instanceID string, _ string) 
 	return r.client.Agent().ServiceDeregister(instanceID)
 }
 
-// ServiceAddresses retunr the list of addresses of active isntacnes of the given service.
+// ServiceAddresses returns the list of addresses of active instances of the given service.
 func (r *Registry) ServiceAddresses(ctx context.Context, serviceName string) ([]string, error) {
 	entries, _, err := r.client.Health().Service(serviceName, "", true, nil)
 	if err != nil {
@@ -63,7 +63,7 @@ func (r *Registry) ServiceAddresses(ctx context.Context, serviceName string) ([]
 	}
 	var res []string
 	for _, e := range entries {
-		res = append(res, fmt.Sprintf("%s:%d", e.Service.Address, e.Service.Port)) // possible bug
+		res = append(res, fmt.Sprintf("%s:%d", e.Service.Address, e.Service.Port))
 	}
 	return res, nil
 }
