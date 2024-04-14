@@ -2,33 +2,44 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
+	"os"
 	"time"
 
+	"github.com/jay-SP/movieapplication/gen"
 	"github.com/jay-SP/movieapplication/metadata/internal/controller/metadata"
-	httphandler "github.com/jay-SP/movieapplication/metadata/internal/handler/http"
+	grpchandler "github.com/jay-SP/movieapplication/metadata/internal/handler/grpc"
 	"github.com/jay-SP/movieapplication/metadata/internal/memory"
 	"github.com/jay-SP/movieapplication/pkg/discovery"
 	"github.com/jay-SP/movieapplication/pkg/discovery/consul"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	"gopkg.in/yaml.v3"
 )
 
 const serviceName = "metadata"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8081, "API handler port")
-	flag.Parse()
-	log.Printf("Starting the movie metadata service on port %d", port)
+
+	log.Printf("Starting the movie metadata service")
+	f, err := os.Open("base.yaml")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	var cfg serviceConfig
+	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
+		panic(err)
+	}
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
 	}
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(serviceName)
-	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
+	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", cfg.API.Port)); err != nil {
 		panic(err)
 	}
 	go func() {
@@ -42,9 +53,15 @@ func main() {
 	defer registry.Deregister(ctx, instanceID, serviceName)
 	repo := memory.New()
 	ctrl := metadata.New(repo)
-	h := httphandler.New(ctrl)
-	http.Handle("/metadata", http.HandlerFunc(h.GetMetaData))
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+	h := grpchandler.New(ctrl)
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", cfg.API.Port))
+	if err != nil {
+		log.Fatalf("failed to lsiten: %v", err)
+	}
+	srv := grpc.NewServer()
+	reflection.Register(srv)
+	gen.RegisterMetadataServiceServer(srv, h)
+	if err := srv.Serve(lis); err != nil {
 		panic(err)
 	}
 }
