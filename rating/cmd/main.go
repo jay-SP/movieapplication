@@ -23,23 +23,23 @@ const serviceName = "rating"
 
 // Intializes all components of the service
 func main() {
-	log.Println("Starting the movie rating service")
 	f, err := os.Open("base.yaml")
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
-	var cfg serviceConfig
+	var cfg config
 	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
 		panic(err)
 	}
+	port := cfg.API.Port
+	log.Printf("Starting the movie rating service on port %d", port)
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
 	}
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(serviceName)
-	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", cfg.API.Port)); err != nil {
+	if err := registry.Register(ctx, instanceID, serviceName, fmt.Sprintf("localhost:%d", port)); err != nil {
 		panic(err)
 	}
 	go func() {
@@ -57,7 +57,7 @@ func main() {
 	}
 	ctrl := rating.New(repo, nil)
 	h := grpchandler.New(ctrl)
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", cfg.API.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

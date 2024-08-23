@@ -18,7 +18,7 @@ type Repository struct {
 //bundling of data (attributes) and methods (functions) that operate on the data into a single unit
 
 func New() (*Repository, error) {
-	db, err := sql.Open("mysql", "root:password@/movieexample")
+	db, err := sql.Open("mysql", "root:jaypagidi96@/movieexample")
 	if err != nil {
 		return nil, err
 	}

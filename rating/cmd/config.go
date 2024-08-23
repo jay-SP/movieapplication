@@ -1,6 +1,6 @@
 package main
 
-type serviceConfig struct {
+type config struct {
 	API apiConfig `yaml:"api"`
 }
 

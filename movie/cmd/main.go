@@ -22,7 +22,7 @@ import (
 const serviceName = "movieservice"
 
 func main() {
-	f, err := os.Open("/Users/jp/go/src/github.com/jay-SP/movieapplication/movie/configs/base.yaml")
+	f, err := os.Open("base.yaml")
 	if err != nil {
 		panic(err)
 	}
