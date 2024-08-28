@@ -1,9 +1,9 @@
 package main
 
-type serviceConfig struct {
-	API apiConfig `yaml:"api"`
+type Config struct {
+	API ApiConfig `yaml:"api"`
 }
 
-type apiConfig struct {
+type ApiConfig struct {
 	Port int `yaml:"port"`
 }

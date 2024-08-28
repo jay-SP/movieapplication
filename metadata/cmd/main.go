@@ -29,10 +29,13 @@ func main() {
 		panic(err)
 	}
 	defer f.Close()
-	var cfg serviceConfig
+	var cfg Config
 	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
 		panic(err)
 	}
+	port := cfg.API.Port
+	log.Printf("Starting the metadata service on port %d", port)
+
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
